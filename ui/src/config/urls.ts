@@ -244,6 +244,9 @@ const urls = {
         keywords: '',
         canonical: `${base.host}/login`
     },
+    /**
+     * @TODO -  remove "sandbox." after we get live Member API credentials
+     */
     orcidLogin: {
         path: `${orcidAuthUrl}/authorize?client_id=${orcidAppId}&response_type=code&scope=openid&prompt=login&redirect_uri=${base.host}/login`
     },
