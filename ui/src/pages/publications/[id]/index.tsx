@@ -345,7 +345,7 @@ const Publication: Types.NextPage<Props> = (props): React.ReactElement => {
                             )}
                         </div>
 
-                        <div className="mb-4 flex flex-wrap items-center gap-2 lg:mb-8">
+                        <div className="mb-4 flex flex-wrap items-center gap-2">
                             <div className="flex w-fit items-center">
                                 <Components.Link
                                     href={`${Config.urls.viewUser.path}/${publicationData.user?.id}`}
@@ -398,20 +398,14 @@ const Publication: Types.NextPage<Props> = (props): React.ReactElement => {
                                 ))}
                         </div>
 
-                        {publicationData.type !== 'PEER_REVIEW' && (
-                            <div className="hidden xl:block">
-                                <Components.PublicationVisualChain highlighted={publicationData.type} />
-                            </div>
-                        )}
-
                         <div className="block lg:hidden">
                             {publicationData && <SidebarCard publication={publicationData} sectionList={sectionList} />}
                         </div>
                     </header>
 
                     {/** Full text */}
-                    <Components.PublicationContentSection id="main-text" hasBreak>
-                        <div className="mb-4">
+                    <Components.PublicationContentSection id="main-text" hasBreak isMainText>
+                        <div>
                             <Components.ParseHTML content={publicationData.content ?? ''} />
                         </div>
                     </Components.PublicationContentSection>
@@ -514,11 +508,11 @@ const Publication: Types.NextPage<Props> = (props): React.ReactElement => {
                         <Components.PublicationContentSection id="ethical-statement" title="Ethical statement" hasBreak>
                             <>
                                 <p className="block text-grey-800 transition-colors duration-500 dark:text-white-50">
-                                    {publicationData.ethicalStatement}
+                                    {parse(publicationData.ethicalStatement)}
                                 </p>
                                 {!!publicationData.ethicalStatementFreeText && (
                                     <p className="mt-4 block text-sm text-grey-700 transition-colors duration-500 dark:text-white-100">
-                                        {publicationData.ethicalStatementFreeText}
+                                        {parse(publicationData.ethicalStatementFreeText)}
                                     </p>
                                 )}
                             </>
@@ -538,7 +532,7 @@ const Publication: Types.NextPage<Props> = (props): React.ReactElement => {
                                 </p>
                                 {publicationData.dataPermissionsStatementProvidedBy?.length && (
                                     <p className="mt-4 block text-sm text-grey-700 transition-colors duration-500 dark:text-white-100">
-                                        {publicationData.dataPermissionsStatementProvidedBy}
+                                        {parse(publicationData.dataPermissionsStatementProvidedBy)}
                                     </p>
                                 )}
                             </>
@@ -553,7 +547,7 @@ const Publication: Types.NextPage<Props> = (props): React.ReactElement => {
                             hasBreak
                         >
                             <p className="block text-grey-800 transition-colors duration-500 dark:text-white-50">
-                                {publicationData.dataAccessStatement}
+                                {parse(publicationData.dataAccessStatement)}
                             </p>
                         </Components.PublicationContentSection>
                     )}
@@ -643,7 +637,7 @@ const Publication: Types.NextPage<Props> = (props): React.ReactElement => {
                                 ) : null}
                                 {publicationData.fundersStatement ? (
                                     <p className="block pt-2 leading-relaxed text-grey-800 transition-colors duration-500 dark:text-grey-100">
-                                        {publicationData.fundersStatement}
+                                        {parse(publicationData.fundersStatement)}
                                     </p>
                                 ) : null}
                             </>

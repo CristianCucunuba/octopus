@@ -4,38 +4,27 @@ import Head from 'next/head';
 import * as OutlineIcons from '@heroicons/react/outline';
 
 import * as Components from '@components';
-import * as Interfaces from '@interfaces';
 import * as Layouts from '@layouts';
 import * as Helpers from '@helpers';
 import * as Config from '@config';
 import * as Types from '@types';
 import * as api from '@api';
 
-interface Errors {
-    latest: null | string;
-}
-
 export const getServerSideProps: Types.GetServerSideProps = async (context) => {
-    const swrKey = `/publications?search&type=${Config.values.publicationTypes.join()}&limit=5&offset=0`;
-
-    const errors: Errors = {
-        latest: null
-    };
+    const swrKey = `/publications?limit=5&orderBy=publishedDate&orderDirection=desc`;
 
     let latest: unknown = [];
     let metadata: unknown = {};
     try {
-        const latestResponse = await api.search('publications', null, Config.values.publicationTypes.join(), 5, 0);
-        latest = latestResponse.data.reverse() as Interfaces.Publication[];
-        metadata = latestResponse.metadata;
-    } catch (err) {
-        const { message } = err as Interfaces.JSONResponseError;
-        errors.latest = message;
+        const latestResponse = await api.get(swrKey, undefined);
+        latest = latestResponse.data.data;
+        metadata = latestResponse.data.metadata;
+    } catch (error) {
+        // couldn't load the latest publications
     }
 
     return {
         props: {
-            errors,
             swrKey,
             fallback: {
                 [swrKey]: {
@@ -50,7 +39,6 @@ export const getServerSideProps: Types.GetServerSideProps = async (context) => {
 };
 
 type Props = {
-    errors: Errors;
     swrKey: string;
 };
 
@@ -81,7 +69,7 @@ const Browse: Types.NextPage<Props> = (props): React.ReactElement => {
                                 <Components.Button
                                     href={`${
                                         Config.urls.search.path
-                                    }?for=publications&type=${Config.values.publicationTypes.join()}`}
+                                    }/publications?type=${Config.values.publicationTypes.join()}`}
                                     title="View all publications"
                                     endIcon={
                                         <OutlineIcons.ArrowRightIcon className="h-4 w-4 text-teal-500 transition-colors duration-500 dark:text-white-50" />
@@ -89,7 +77,7 @@ const Browse: Types.NextPage<Props> = (props): React.ReactElement => {
                                     className="w-fit"
                                 />
                                 <Components.Button
-                                    href={`${Config.urls.search.path}?for=users`}
+                                    href={`${Config.urls.search.path}/authors`}
                                     title="View all authors"
                                     endIcon={
                                         <OutlineIcons.UserIcon className="h-4 w-4 text-teal-500 transition-colors duration-500 dark:text-white-50" />
@@ -103,7 +91,7 @@ const Browse: Types.NextPage<Props> = (props): React.ReactElement => {
                             {Config.values.publicationTypes.map((type) => (
                                 <Components.Link
                                     key={type}
-                                    href={`${Config.urls.search.path}?for=publications&type=${type}`}
+                                    href={`${Config.urls.search.path}/publications?type=${type}`}
                                     className="group mb-2 block w-fit rounded border-transparent outline-0 focus:ring-2 focus:ring-yellow-400"
                                 >
                                     <span className="text-grey-800 transition-colors duration-500 group-hover:text-grey-500 dark:text-grey-50">
