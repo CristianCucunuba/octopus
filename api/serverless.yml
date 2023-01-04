@@ -7,10 +7,7 @@ useDotenv: true
 plugins:
     - serverless-offline-ssm
     - serverless-offline
-<<<<<<< HEAD
     - serverless-dotenv-plugin
-=======
->>>>>>> origin/main
     - serverless-domain-manager
     - serverless-webpack
     - serverless-webpack-prisma
@@ -95,8 +92,6 @@ custom:
             /elasticsearch_user_local_octopus: ${env:ELASTICSEARCH_USER}
             /elasticsearch_password_local_octopus: ${env:ELASTICSEARCH_PASSWORD}
             /elasticsearch_endpoint_local_octopus: ${env:ELASTICSEARCH_ENDPOINT}
-<<<<<<< HEAD
-=======
             /elastic_search_protocol_local_octopus: ${env:ELASTICSEARCH_PROTOCOL}
             /db_connection_string_local_octopus: ${env:DATABASE_URL}
             /jwt_secret_local_octopus: ${env:JWT_SECRET}
@@ -111,7 +106,6 @@ custom:
             /email_sender_address_local_octopus: ${env:EMAIL_SENDER_ADDRESS}
             /base_url_local_octopus: ${env:BASE_URL}
             /authorization_callback_url_local_octopus: ${env:AUTHORISATION_CALLBACK_URL}
->>>>>>> origin/main
     prune:
         automatic: true
         number: 3
