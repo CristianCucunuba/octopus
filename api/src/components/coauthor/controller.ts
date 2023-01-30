@@ -19,7 +19,8 @@ export const updateAll = async (
     event: I.AuthenticatedAPIRequest<I.CoAuthor[], undefined, I.CreateCoAuthorPathParams>
 ): Promise<I.JSONResponse> => {
     try {
-        const publication = await publicationService.get(event.pathParameters.id);
+        const publicationId = event.pathParameters.id;
+        const publication = await publicationService.get(publicationId);
 
         // Does the publication exist?
         if (!publication) {
@@ -42,13 +43,41 @@ export const updateAll = async (
             });
         }
 
-        // removes user element to allow to save many to database
-        event.body.map((coAuthor) => {
+        const newCoAuthorsArray = event.body.map((coAuthor) => {
+            // removes user element to allow to save many to database
             delete coAuthor.user;
+            return coAuthor;
         });
 
-        const coAuthors = await coAuthorService.updateAll(event.pathParameters.id, event.body);
-        return response.json(201, coAuthors);
+        // verify if any of the previously added co-authors have been removed
+        const oldCoAuthorsArray = await coAuthorService.getAllByPublication(publicationId);
+        const removedCoAuthors = oldCoAuthorsArray.filter(
+            (oldCoAuthor) => !newCoAuthorsArray.find((newCoAuthor) => oldCoAuthor.id === newCoAuthor.id)
+        );
+
+        if (removedCoAuthors.length) {
+            // notify co-authors that they've been removed (if their approval has been requested)
+            for (const coAuthor of removedCoAuthors) {
+                if (coAuthor.approvalRequested) {
+                    // remove co-author from this publication
+                    await coAuthorService.deleteCoAuthor(coAuthor.id);
+
+                    // notify co-author that they've been removed
+                    await email.notifyCoAuthorRemoval({
+                        coAuthor: {
+                            email: coAuthor.email
+                        },
+                        publication: {
+                            title: publication.title || ''
+                        }
+                    });
+                }
+            }
+        }
+
+        await coAuthorService.updateAll(publicationId, newCoAuthorsArray);
+
+        return response.json(200, 'Successfully updated publication authors');
     } catch (err) {
         console.log(err);
         return response.json(500, { message: 'Unknown server error.' });
@@ -91,6 +120,17 @@ export const remove = async (
 
         await coAuthorService.deleteCoAuthor(event.pathParameters.coauthor);
 
+        // notify co-author that they've been removed
+        await email.notifyCoAuthorRemoval({
+            coAuthor: {
+                email:
+                    publication.coAuthors.find((coAuthor) => coAuthor.id === event.pathParameters.coauthor)?.email || ''
+            },
+            publication: {
+                title: publication.title || ''
+            }
+        });
+
         return response.json(200, { message: 'Co-author deleted from this publication' });
     } catch (err) {
         return response.json(500, { message: 'Unknown server error.' });
@@ -115,6 +155,11 @@ export const link = async (
             return response.json(403, {
                 message: 'This publication is LIVE and therefore cannot be edited.'
             });
+        }
+
+        // check if this user is part of co-authors list
+        if (!publication.coAuthors.find((coAuthor) => coAuthor.email === event.body.email)) {
+            return response.json(403, { message: 'You are not listed as a co-author for this publication.' });
         }
 
         if (event.body.approve) {
@@ -167,6 +212,17 @@ export const link = async (
 
         await coAuthorService.removeFromPublication(event.pathParameters.id, event.body.email, event.body.code);
 
+        // notify main author about rejection
+        await email.notifyCoAuthorRejection({
+            coAuthor: {
+                email: event.body.email
+            },
+            publication: {
+                title: publication.title || '',
+                authorEmail: publication.user.email || ''
+            }
+        });
+
         return response.json(200, 'Removed co-author from publication');
     } catch (err) {
         return response.json(500, { message: 'Unknown server error.' });
@@ -204,7 +260,7 @@ export const updateConfirmation = async (
         await coAuthorService.updateConfirmation(event.pathParameters.id, event.user.id, event.body.confirm);
 
         if (event.body.confirm) {
-            // notify main author
+            // notify main author about confirmation
             await email.notifyCoAuthorConfirmation({
                 coAuthor: {
                     firstName: event.user.firstName,
@@ -217,6 +273,17 @@ export const updateConfirmation = async (
                 },
                 remainingConfirmationsCount:
                     publication.coAuthors.filter((coAuthor) => !coAuthor.confirmedCoAuthor).length - 1
+            });
+        } else {
+            // notify main author about rejection
+            await email.notifyCoAuthorRejection({
+                coAuthor: {
+                    email: event.user.email || ''
+                },
+                publication: {
+                    title: publication.title || '',
+                    authorEmail: publication.user.email || ''
+                }
             });
         }
 
